@@ -14,8 +14,10 @@
         :show-top-control="showTopControl"
         :show-bottom-control="showBottomControl"
         :show-branches="showBranches"
+        :is-playing="isPlaying"
         @go-begin="store.changePly(0)"
         @go-back="store.goBack()"
+        @go-play="onPlay"
         @go-forward="store.goForward()"
         @go-end="store.changePly(Number.MAX_SAFE_INTEGER)"
         @select-move="(ply) => store.changePly(ply)"
@@ -43,7 +45,7 @@ export const minWidth = 200;
 
 <script setup lang="ts">
 import { t } from "@/common/i18n";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, onUnmounted, ref } from "vue";
 import RecordView from "@/renderer/view/primitive/RecordView.vue";
 import { useStore } from "@/renderer/store";
 import { AppState } from "@/common/control/state.js";
@@ -105,6 +107,33 @@ const onToggleComment = (enabled: boolean) => {
     showCommentInRecordView: enabled,
   });
 };
+
+// 再生中かどうかを管理するリアクティブ変数
+const isPlaying = ref(false);
+let playIntervalId: NodeJS.Timeout | null = null;
+
+const onPlay = async () => {
+  const intervalTime = 5000; // 例: 1000ミリ秒 (1秒) ごとに実行
+  isPlaying.value = !isPlaying.value;
+  if (isPlaying.value) {
+    store.goForward();
+    playIntervalId = setInterval(() => {
+      store.goForward();
+    }, intervalTime);
+  } else {
+    if (playIntervalId !== null) {
+      clearInterval(playIntervalId); // setInterval を停止
+      playIntervalId = null;
+    }
+  }
+};
+
+onUnmounted(() => {
+  if (playIntervalId !== null) {
+    clearInterval(playIntervalId); // コンポーネントがアンマウントされるときにインターバルをクリア
+    playIntervalId = null;
+  }
+});
 </script>
 
 <style scoped>
