@@ -55,6 +55,7 @@ import {
 } from "@/renderer/devices/hotkey";
 import { useAppSettings } from "@/renderer/store/settings";
 import BookPanel from "./BookPanel.vue";
+import { SoundManager } from "@/renderer/sound/sound";
 
 defineProps({
   showElapsedTime: {
@@ -111,13 +112,36 @@ const onToggleComment = (enabled: boolean) => {
 // 再生中かどうかを管理するリアクティブ変数
 const isPlaying = ref(false);
 let playIntervalId: NodeJS.Timeout | null = null;
+const synth = window.speechSynthesis;
+const soundManager = new SoundManager();
+
+// const getVoiceText = (displayText: string, nextColor: string) => {
+//   let text = displayText.slice(1);
+//   if (nextColor === "black") {
+//     text = `せんて,${text}`;
+//   } else {
+//     text = `ごて,${text}`;
+//   }
+  
+//   text.replace("歩", "ふ");
+//   text.replace("角", "かく");
+//   text.replace("成", "なり");
+//   text.replace("同", "おなじく");
+//   text.replace("桂", "けい");
+//   text.replace("飛", "ひしゃ");
+//   return "";
+// }
 
 const onPlay = async () => {
   const intervalTime = 5000; // 例: 1000ミリ秒 (1秒) ごとに実行
   isPlaying.value = !isPlaying.value;
   if (isPlaying.value) {
+    const text = store.record.current.next?.displayText || "";
+    soundManager.read(text, store.record.current.nextColor);
     store.goForward();
     playIntervalId = setInterval(() => {
+      const text = store.record.current.next?.displayText || "";
+      soundManager.read(text, store.record.current.nextColor);
       store.goForward();
     }, intervalTime);
   } else {
