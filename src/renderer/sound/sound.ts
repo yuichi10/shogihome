@@ -1,7 +1,5 @@
 import {soundSourceMap, SoundType} from "@/renderer/assets/sound";
 
-const preloadedSounds: { [path: string]: HTMLAudioElement } = {};
-
 export class SoundManager {
   private synth: SpeechSynthesis;
   private audioContext: AudioContext;
