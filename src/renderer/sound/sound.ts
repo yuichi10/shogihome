@@ -349,26 +349,37 @@ export class SoundManager {
 
   createVoiceArray(displayText: string, nextColor: string): SoundType[] {
     const voices: SoundType[] = [];
+    // 勝敗が決まったときの処理
+    if (nextColor === SoundType.BLACK && displayText.startsWith("投了")) {
+      voices.push(SoundType.MADE);
+      voices.push(SoundType.WHITE_WIN);
+      return voices;
+    } else if (nextColor === SoundType.WHITE && displayText.startsWith("投了")) {
+      voices.push(SoundType.MADE);
+      voices.push(SoundType.BLACK_WIN);
+      return voices;
+    }
+    // 対局中
     if (nextColor === SoundType.BLACK) {
       voices.push(SoundType.BLACK);
     } else if (nextColor === SoundType.WHITE) {
       voices.push(SoundType.WHITE);
     }
-    const text = displayText.slice(1);
+    let text = displayText.slice(1);
     const place = this.getPlaceVoice(text);
     if (place !== undefined) {
       voices.push(place);
-      text.replace(place, "");
+      text = text.replace(place, "");
     }
     const koma = this.getKomaVoice(text);
     if (koma !== undefined) {
       voices.push(koma);
-      text.replace(koma, "");
+      text = text.replace(koma, "");
     }
     const change = this.getChangeVoice(text);
     if (change !== undefined) {
       voices.push(change);
-      text.replace(change, "");
+      text = text.replace(change, "");
     }
     return voices;
   }

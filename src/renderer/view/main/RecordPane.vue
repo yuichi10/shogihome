@@ -112,41 +112,31 @@ const onToggleComment = (enabled: boolean) => {
 // 再生中かどうかを管理するリアクティブ変数
 const isPlaying = ref(false);
 let playIntervalId: NodeJS.Timeout | null = null;
-const synth = window.speechSynthesis;
 const soundManager = new SoundManager();
 
-// const getVoiceText = (displayText: string, nextColor: string) => {
-//   let text = displayText.slice(1);
-//   if (nextColor === "black") {
-//     text = `せんて,${text}`;
-//   } else {
-//     text = `ごて,${text}`;
-//   }
-  
-//   text.replace("歩", "ふ");
-//   text.replace("角", "かく");
-//   text.replace("成", "なり");
-//   text.replace("同", "おなじく");
-//   text.replace("桂", "けい");
-//   text.replace("飛", "ひしゃ");
-//   return "";
-// }
-
 const onPlay = async () => {
-  const intervalTime = 5000; // 例: 1000ミリ秒 (1秒) ごとに実行
+  const intervalTime = 5000;
   isPlaying.value = !isPlaying.value;
   if (isPlaying.value) {
     const text = store.record.current.next?.displayText || "";
     soundManager.read(text, store.record.current.nextColor);
     store.goForward();
     playIntervalId = setInterval(() => {
-      const text = store.record.current.next?.displayText || "";
+      if (store.record.current.next === null) {
+        isPlaying.value = false; // 再生が終了したらフラグを更新
+        if (playIntervalId !== null) {
+          clearInterval(playIntervalId);
+          playIntervalId = null;
+        }
+        return; // 次の手がない場合は何もしない
+      }
+      const text = store.record.current.next.displayText || "";
       soundManager.read(text, store.record.current.nextColor);
       store.goForward();
     }, intervalTime);
   } else {
     if (playIntervalId !== null) {
-      clearInterval(playIntervalId); // setInterval を停止
+      clearInterval(playIntervalId);
       playIntervalId = null;
     }
   }
