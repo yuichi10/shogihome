@@ -1,3 +1,7 @@
+!!!!!!!!!!
+PULL REQUEST がupstreamに向いていないことを確認してください。
+!!!!!!!!!!
+
 # 説明 / Description
 
 
