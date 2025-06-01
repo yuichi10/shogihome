@@ -176,17 +176,8 @@ export class SoundManager {
     }
 
     for (const direction of movableDirection) {
-      console.log("nextMove");
-      console.log(nextMove);
-      console.log("direction");
-      console.log(direction);
-
       const fromAroundSquare = nextMove.to.neighbor(direction.X, direction.Y);
       const piece = record.position.board.at(fromAroundSquare);
-      console.log("fromAroundSquare");
-      console.log(fromAroundSquare);
-
-      console.log(piece);
 
       if (
         piece !== null &&
@@ -203,15 +194,14 @@ export class SoundManager {
 
   goldOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
     const voices: SoundType[] = [];
-    const nextPieceType = nextMove.pieceType;
 
     const movableDirection: XY[] = [
-      new XY(-1, 0), // 左
-      new XY(1, 0), // 右
-      new XY(0, -1), // 下
-      new XY(0, 1), // 上
-      new XY(-1, -1), // 左下
-      new XY(1, -1), // 右下
+      new XY(1, 0), // 左
+      new XY(-1, 0), // 右
+      new XY(0, 1), // 下
+      new XY(0, -1), // 上
+      new XY(1, 1), // 左下
+      new XY(-1, 1), // 右下
     ];
     const aroundPieceDirection = this.aroundPieceDirection(movableDirection, record, nextMove);
 
@@ -228,11 +218,11 @@ export class SoundManager {
   shilverOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
     const voices: SoundType[] = [];
     const movableDirection: XY[] = [
-      new XY(0, -1),
-      new XY(-1, -1), // 左下
-      new XY(1, -1), // 右下
-      new XY(-1, 1), // 左上
-      new XY(1, 1), // 右上
+      new XY(0, 1), // 下
+      new XY(1, 1), // 左下
+      new XY(-1, 1), // 右下
+      new XY(1, -1), // 左上
+      new XY(-1, -1), // 右上
     ];
     const aroundPieceDirection = this.aroundPieceDirection(movableDirection, record, nextMove);
     // 他にも動かせる駒があるとき
@@ -247,7 +237,7 @@ export class SoundManager {
 
   knightOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
     const voices: SoundType[] = [];
-    const movableDirection: XY[] = [new XY(-1, -2), new XY(1, -2)];
+    const movableDirection: XY[] = [new XY(-1, 2), new XY(1, 2)];
     const aroundPieceDirection = this.aroundPieceDirection(movableDirection, record, nextMove);
     // 他にも動かせる駒があるとき
     if (aroundPieceDirection.length > 0) {
@@ -287,8 +277,6 @@ export class SoundManager {
 
   moveDetailVoice(record: ImmutableRecord): SoundType[] {
     const voices: SoundType[] = [];
-    // record.position.board.hasPower(record.next?.move?.to, next.move.color)
-    console.log(record.position.board);
     const nextMove = record.current.next?.move as Move | null;
     if (!nextMove) {
       return voices;
