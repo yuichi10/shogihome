@@ -192,6 +192,39 @@ export class SoundManager {
     return aroundPieceDirection;
   }
 
+  longRangeSamePieceSearch(longRangePattern: XY[], record: ImmutableRecord, nextMove: Move): XY[] {
+    const aroundPieceDirection: XY[] = [];
+
+    for (const pattern of longRangePattern) {
+      for (let i = 0; i < 10; i++) {
+        const searchSquare = nextMove.to.neighbor(pattern.X * i, pattern.Y * i);
+        const piece = record.position.board.at(searchSquare);
+        if (
+          searchSquare.file < 1 ||
+          searchSquare.file > 9 ||
+          searchSquare.rank < 1 ||
+          searchSquare.rank > 9
+        ) {
+          break; // 盤外に出たら終了
+        }
+        if (piece !== null && piece !== undefined && piece.type !== nextMove.pieceType) {
+          break;
+        }
+        if (
+          piece !== null &&
+          piece !== undefined &&
+          piece.type === nextMove.pieceType &&
+          ((nextMove.from instanceof Square && !searchSquare.equals(nextMove.from)) ||
+            nextMove.from === nextMove.pieceType)
+        ) {
+          aroundPieceDirection.push(pattern);
+          break; // 一つでも見つかれば、これ以上調べる必要はない
+        }
+      }
+    }
+    return aroundPieceDirection;
+  }
+
   goldOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
     const voices: SoundType[] = [];
 
@@ -210,6 +243,7 @@ export class SoundManager {
       //　打つ場合
       if (nextMove.from === nextMove.pieceType) {
         voices.push(SoundType.UTU);
+        return voices;
       }
     }
     return voices;
@@ -230,6 +264,7 @@ export class SoundManager {
       //　打つ場合
       if (nextMove.from === nextMove.pieceType) {
         voices.push(SoundType.UTU);
+        return voices;
       }
     }
     return voices;
@@ -244,6 +279,7 @@ export class SoundManager {
       //　打つ場合
       if (nextMove.from === nextMove.pieceType) {
         voices.push(SoundType.UTU);
+        return voices;
       }
     }
     return voices;
@@ -251,27 +287,69 @@ export class SoundManager {
 
   lanceOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
     const voices: SoundType[] = [];
+    const searchDirection: XY[] = [new XY(0, 1)]; // 下方向のみ
+    const samePieces = this.longRangeSamePieceSearch(searchDirection, record, nextMove);
+
+    if (samePieces.length > 0) {
+      if (nextMove.from === nextMove.pieceType) {
+        voices.push(SoundType.UTU);
+        return voices;
+      }
+    }
 
     return voices;
   }
 
   rookOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
     const voices: SoundType[] = [];
+    const searchDirection: XY[] = [new XY(0, 1), new XY(0, -1), new XY(1, 0), new XY(-1, 0)];
+    const samePieces = this.longRangeSamePieceSearch(searchDirection, record, nextMove);
+
+    if (samePieces.length > 0) {
+      if (nextMove.from === nextMove.pieceType) {
+        voices.push(SoundType.UTU);
+        return voices;
+      }
+    }
     return voices;
   }
 
   bishopOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
     const voices: SoundType[] = [];
+    const searchDirection: XY[] = [new XY(1, 1), new XY(-1, -1), new XY(1, -1), new XY(-1, 1)];
+    const samePieces = this.longRangeSamePieceSearch(searchDirection, record, nextMove);
+
+    if (samePieces.length > 0) {
+      if (nextMove.from === nextMove.pieceType) {
+        voices.push(SoundType.UTU);
+        return voices;
+      }
+    }
     return voices;
   }
 
   dragonOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
     const voices: SoundType[] = [];
+    const searchDirection: XY[] = [new XY(0, 1), new XY(0, -1), new XY(1, 0), new XY(-1, 0)];
+    const aroundSearchDirection: XY[] = [
+      new XY(1, 1),
+      new XY(-1, -1),
+      new XY(1, -1),
+      new XY(-1, 1),
+    ];
+    const samePieces = this.longRangeSamePieceSearch(searchDirection, record, nextMove);
+    samePieces.push(...this.aroundPieceDirection(aroundSearchDirection, record, nextMove));
+
     return voices;
   }
 
   horseOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
     const voices: SoundType[] = [];
+    const searchDirection: XY[] = [new XY(1, 1), new XY(-1, -1), new XY(1, -1), new XY(-1, 1)];
+    const aroundSearchDirection: XY[] = [new XY(0, 1), new XY(0, -1), new XY(1, 0), new XY(-1, 0)];
+    const samePieces = this.longRangeSamePieceSearch(searchDirection, record, nextMove);
+    samePieces.push(...this.aroundPieceDirection(aroundSearchDirection, record, nextMove));
+
     return voices;
   }
 
@@ -329,8 +407,6 @@ export class SoundManager {
     voices.push(...this.getPlaceVoice(currentMove, nextMove));
     voices.push(...this.getPieceVoice(nextMove));
     voices.push(...this.changeVoice(nextMove));
-    // TODO: 打つの音声に関しても、打つ以外の手があるときは読んで、ない場合は読まないようにしたい。
-    // voices.push(...this.utuVoice(nextMove));
     voices.push(...this.moveDetailVoice(record));
 
     return voices;
