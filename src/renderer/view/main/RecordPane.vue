@@ -116,10 +116,11 @@ const soundManager = new SoundManager();
 
 const onPlay = async () => {
   const intervalTime = 5000;
+  store.record.position.board;
   isPlaying.value = !isPlaying.value;
   if (isPlaying.value) {
     const text = store.record.current.next?.displayText || "";
-    soundManager.read(store.record.current);
+    soundManager.read(store.record);
     store.goForward();
     playIntervalId = setInterval(() => {
       if (store.record.current.next === null) {
@@ -131,7 +132,7 @@ const onPlay = async () => {
         return; // 次の手がない場合は何もしない
       }
       const text = store.record.current.next.displayText || "";
-      soundManager.read(store.record.current);
+      soundManager.read(store.record);
       store.goForward();
     }, intervalTime);
   } else {

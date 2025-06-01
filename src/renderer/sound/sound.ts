@@ -1,13 +1,16 @@
 import { soundSourceMap, SoundType } from "@/renderer/assets/sound";
 import {
   ImmutableNode,
+  ImmutableRecord,
   SpecialMoveType,
   Color,
   SpecialMove,
   Move,
   PieceType,
   Square,
+  Direction,
 } from "tsshogi";
+import { XY } from "@/renderer/sound/xy";
 
 export class SoundManager {
   private synth: SpeechSynthesis;
@@ -60,8 +63,7 @@ export class SoundManager {
 
   getPlaceVoice(currentMove: Move, nextMove: Move): SoundType[] {
     const voices: SoundType[] = [];
-
-    if (nextMove.to === currentMove.to) {
+    if (nextMove.capturedPieceType != null && nextMove.to.equals(currentMove.to)) {
       voices.push(SoundType.ONAJIKU);
       return voices;
     }
@@ -99,6 +101,9 @@ export class SoundManager {
         break;
       case PieceType.PAWN:
         voices.push(SoundType.FU);
+        break;
+      case PieceType.PROM_PAWN:
+        voices.push(SoundType.TOKIN);
         break;
       case PieceType.PROM_SILVER:
         voices.push(SoundType.NARIGIN);
@@ -163,8 +168,167 @@ export class SoundManager {
     return voices;
   }
 
-  gameVoice(current: ImmutableNode): SoundType[] {
+  aroundPieceDirection(movableDirection: XY[], record: ImmutableRecord, nextMove: Move): XY[] {
+    const aroundPieceDirection: XY[] = [];
+    const nextPieceType = nextMove.pieceType;
+    if (movableDirection.length === 0) {
+      return aroundPieceDirection;
+    }
+
+    for (const direction of movableDirection) {
+      console.log("nextMove");
+      console.log(nextMove);
+      console.log("direction");
+      console.log(direction);
+
+      const fromAroundSquare = nextMove.to.neighbor(direction.X, direction.Y);
+      const piece = record.position.board.at(fromAroundSquare);
+      console.log("fromAroundSquare");
+      console.log(fromAroundSquare);
+
+      console.log(piece);
+
+      if (
+        piece !== null &&
+        piece !== undefined &&
+        piece.type === nextPieceType &&
+        ((nextMove.from instanceof Square && !fromAroundSquare.equals(nextMove.from)) ||
+          nextMove.from === nextPieceType)
+      ) {
+        aroundPieceDirection.push(direction);
+      }
+    }
+    return aroundPieceDirection;
+  }
+
+  goldOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
     const voices: SoundType[] = [];
+    const nextPieceType = nextMove.pieceType;
+
+    const movableDirection: XY[] = [
+      new XY(-1, 0), // 左
+      new XY(1, 0), // 右
+      new XY(0, -1), // 下
+      new XY(0, 1), // 上
+      new XY(-1, -1), // 左下
+      new XY(1, -1), // 右下
+    ];
+    const aroundPieceDirection = this.aroundPieceDirection(movableDirection, record, nextMove);
+
+    // 他にも動かせる駒があるとき
+    if (aroundPieceDirection.length > 0) {
+      //　打つ場合
+      if (nextMove.from === nextMove.pieceType) {
+        voices.push(SoundType.UTU);
+      }
+    }
+    return voices;
+  }
+
+  shilverOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
+    const voices: SoundType[] = [];
+    const movableDirection: XY[] = [
+      new XY(0, -1),
+      new XY(-1, -1), // 左下
+      new XY(1, -1), // 右下
+      new XY(-1, 1), // 左上
+      new XY(1, 1), // 右上
+    ];
+    const aroundPieceDirection = this.aroundPieceDirection(movableDirection, record, nextMove);
+    // 他にも動かせる駒があるとき
+    if (aroundPieceDirection.length > 0) {
+      //　打つ場合
+      if (nextMove.from === nextMove.pieceType) {
+        voices.push(SoundType.UTU);
+      }
+    }
+    return voices;
+  }
+
+  knightOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
+    const voices: SoundType[] = [];
+    const movableDirection: XY[] = [new XY(-1, -2), new XY(1, -2)];
+    const aroundPieceDirection = this.aroundPieceDirection(movableDirection, record, nextMove);
+    // 他にも動かせる駒があるとき
+    if (aroundPieceDirection.length > 0) {
+      //　打つ場合
+      if (nextMove.from === nextMove.pieceType) {
+        voices.push(SoundType.UTU);
+      }
+    }
+    return voices;
+  }
+
+  lanceOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
+    const voices: SoundType[] = [];
+
+    return voices;
+  }
+
+  rookOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
+    const voices: SoundType[] = [];
+    return voices;
+  }
+
+  bishopOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
+    const voices: SoundType[] = [];
+    return voices;
+  }
+
+  dragonOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
+    const voices: SoundType[] = [];
+    return voices;
+  }
+
+  horseOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
+    const voices: SoundType[] = [];
+    return voices;
+  }
+
+  moveDetailVoice(record: ImmutableRecord): SoundType[] {
+    const voices: SoundType[] = [];
+    // record.position.board.hasPower(record.next?.move?.to, next.move.color)
+    console.log(record.position.board);
+    const nextMove = record.current.next?.move as Move | null;
+    if (!nextMove) {
+      return voices;
+    }
+    switch (nextMove.pieceType) {
+      case PieceType.GOLD:
+      case PieceType.PROM_PAWN:
+      case PieceType.PROM_KNIGHT:
+      case PieceType.PROM_LANCE:
+      case PieceType.PROM_SILVER:
+        voices.push(...this.goldOtherMoves(record, nextMove));
+        break;
+      case PieceType.SILVER:
+        voices.push(...this.shilverOtherMoves(record, nextMove));
+        break;
+      case PieceType.KNIGHT:
+        voices.push(...this.knightOtherMoves(record, nextMove));
+        break;
+      case PieceType.LANCE:
+        voices.push(...this.lanceOtherMoves(record, nextMove));
+        break;
+      case PieceType.ROOK:
+        voices.push(...this.rookOtherMoves(record, nextMove));
+        break;
+      case PieceType.BISHOP:
+        voices.push(...this.bishopOtherMoves(record, nextMove));
+        break;
+      case PieceType.DRAGON:
+        voices.push(...this.dragonOtherMoves(record, nextMove));
+        break;
+      case PieceType.HORSE:
+        voices.push(...this.horseOtherMoves(record, nextMove));
+        break;
+    }
+    return voices;
+  }
+
+  gameVoice(record: ImmutableRecord): SoundType[] {
+    const voices: SoundType[] = [];
+    const current = record.current;
     const currentMove = current.move as Move | null;
     if (!currentMove) {
       return voices;
@@ -179,11 +343,13 @@ export class SoundManager {
     voices.push(...this.changeVoice(nextMove));
     // TODO: 打つの音声に関しても、打つ以外の手があるときは読んで、ない場合は読まないようにしたい。
     // voices.push(...this.utuVoice(nextMove));
+    voices.push(...this.moveDetailVoice(record));
 
     return voices;
   }
 
-  gameEndVoice(current: ImmutableNode): SoundType[] {
+  gameEndVoice(record: ImmutableRecord): SoundType[] {
+    const current = record.current;
     const voices: SoundType[] = [];
     if (
       current.next?.move &&
@@ -201,19 +367,20 @@ export class SoundManager {
     return voices;
   }
 
-  createVoiceArray(current: ImmutableNode): SoundType[] {
+  createVoiceArray(record: ImmutableRecord): SoundType[] {
     const voices: SoundType[] = [];
     // 勝敗が決まったときの処理
-    voices.push(...this.gameEndVoice(current));
+    voices.push(...this.gameEndVoice(record));
     if (voices.length > 0) {
       return voices;
     }
-    voices.push(...this.gameVoice(current));
+    voices.push(...this.gameVoice(record));
     return voices;
   }
 
-  read(current: ImmutableNode): void {
-    const voices = this.createVoiceArray(current);
+  read(record: ImmutableRecord): void {
+    const current = record.current;
+    const voices = this.createVoiceArray(record);
     console.log(current);
     this.playSequence(voices);
   }
