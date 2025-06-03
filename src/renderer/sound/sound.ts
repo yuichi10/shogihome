@@ -242,6 +242,8 @@ export class SoundManager {
     return aroundPieceDirection;
   }
 
+  // これはあくまで周辺のコマだけになっている。
+  // TODO: 香車や飛車、角等　遠くにいる駒も検索できるようにする必要がある。
   pieceOperationCanddate(nextMove: Move, nextToFromOperation: XY): PieceOperation[] {
     const po: PieceOperation[] = [];
 
@@ -320,6 +322,7 @@ export class SoundManager {
     return po;
   }
 
+  // それぞれの動く可能性のある駒の呼び方一覧を取得する。
   operationCount(nextMove: Move, moveOperations: XY[]): Map<PieceOperation, number> {
     const count: Map<PieceOperation, number> = new Map<PieceOperation, number>();
     for (let i = 0; i < moveOperations.length; i++) {
@@ -404,8 +407,6 @@ export class SoundManager {
     // 先手と後手で　上とか下の概念が変わる
     const voices: SoundType[] = [];
 
-    // TODO: ここはあくまで相対なので考える必要があるかも。
-    // TODO: 先手と後手でneibourの向きが違うかもしれない。これは要調査。
     const movableDirection: XY[] = [
       XY.HIDARI(nextMove.color),
       XY.MIGI(nextMove.color),
@@ -449,20 +450,39 @@ export class SoundManager {
   shilverOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
     const voices: SoundType[] = [];
     const movableDirection: XY[] = [
-      new XY(0, 1), // 下
-      new XY(1, 1), // 左下
-      new XY(-1, 1), // 右下
-      new XY(1, -1), // 左上
-      new XY(-1, -1), // 右上
+      XY.HIKU(nextMove.color),
+      XY.HIDARI_HIKU(nextMove.color),
+      XY.MIGI_HIKU(nextMove.color),
+      XY.HIDARI_AGARU(nextMove.color),
+      XY.MIGI_AGARU(nextMove.color),
     ];
     const aroundPieceDirection = this.aroundPieceDirection(movableDirection, record, nextMove);
     // 他にも動かせる駒があるとき
     if (aroundPieceDirection.length > 0) {
       //　打つ場合
-      if (nextMove.from === nextMove.pieceType) {
+      if (!(nextMove.from instanceof Square)) {
         voices.push(SoundType.UTU);
         return voices;
       }
+
+      // 自身の行動方法
+      const selfMove: XY = new XY(
+        (nextMove.from.file - nextMove.to.file) * -1,
+        nextMove.from.rank - nextMove.to.rank,
+      );
+
+      const selfOperation = this.pieceOperationCanddate(nextMove, selfMove);
+      const otherOperationCount = this.operationCount(nextMove, aroundPieceDirection);
+
+      const operationFinalList: PieceOperation[] = [];
+      for (const ops of selfOperation) {
+        if (otherOperationCount.get(ops) === undefined) {
+          operationFinalList.push(ops);
+        }
+      }
+
+      const operationExplain = this.choiceOperation(operationFinalList);
+      voices.push(...this.pieceOperationToSoundType(operationExplain));
     }
     return voices;
   }
@@ -484,7 +504,7 @@ export class SoundManager {
 
   lanceOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
     const voices: SoundType[] = [];
-    const searchDirection: XY[] = [new XY(0, 1)]; // 下方向のみ
+    const searchDirection: XY[] = [XY.HIKU(nextMove.color)]; // 下方向のみ
     const samePieces = this.longRangeSamePieceSearch(searchDirection, record, nextMove);
 
     if (samePieces.length > 0) {
