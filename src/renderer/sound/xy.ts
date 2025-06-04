@@ -9,6 +9,10 @@ export class XY {
   static UP_RIGHT = new XY(1, -1);
   static DOWN_LEFT = new XY(-1, 1);
   static DOWN_RIGHT = new XY(1, 1);
+  static KNIGHT_LEFT = new XY(-1, -2);
+  static KNIGHT_RIGHT = new XY(1, -2);
+  static KNIGHT_LEFT_WHITE = new XY(1, 2);
+  static KNIGHT_RIGHT_WHITE = new XY(-1, 2);
   private _x: number;
   private _y: number;
   constructor(x: number, y: number) {
@@ -57,5 +61,13 @@ export class XY {
 
   static MIGI_HIKU(color: Color): XY {
     return color === Color.BLACK ? this.DOWN_RIGHT : this.UP_LEFT;
+  }
+
+  static KNIGHT_HIDARI(color: Color): XY {
+    return color === Color.BLACK ? this.KNIGHT_LEFT : this.KNIGHT_LEFT_WHITE;
+  }
+
+  static KNIGHT_MIGI(color: Color): XY {
+    return color === Color.BLACK ? this.KNIGHT_RIGHT : this.KNIGHT_RIGHT_WHITE;
   }
 }

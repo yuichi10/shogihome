@@ -244,7 +244,7 @@ export class SoundManager {
 
   // これはあくまで周辺のコマだけになっている。
   // TODO: 香車や飛車、角等　遠くにいる駒も検索できるようにする必要がある。
-  pieceOperationCanddate(nextMove: Move, nextToFromOperation: XY): PieceOperation[] {
+  aroundPieceOperationCanddate(nextMove: Move, nextToFromOperation: XY): PieceOperation[] {
     const po: PieceOperation[] = [];
 
     if (Object.values(PieceType).includes(nextMove.from as PieceType)) {
@@ -326,7 +326,7 @@ export class SoundManager {
   operationCount(nextMove: Move, moveOperations: XY[]): Map<PieceOperation, number> {
     const count: Map<PieceOperation, number> = new Map<PieceOperation, number>();
     for (let i = 0; i < moveOperations.length; i++) {
-      const ops = this.pieceOperationCanddate(nextMove, moveOperations[i]);
+      const ops = this.aroundPieceOperationCanddate(nextMove, moveOperations[i]);
 
       for (const op of ops) {
         const opCount = count.get(op);
@@ -403,208 +403,11 @@ export class SoundManager {
     return voices;
   }
 
-  goldOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
-    // 先手と後手で　上とか下の概念が変わる
-    const voices: SoundType[] = [];
-
-    const movableDirection: XY[] = [
-      XY.HIDARI(nextMove.color),
-      XY.MIGI(nextMove.color),
-      XY.HIKU(nextMove.color),
-      XY.UE(nextMove.color),
-      XY.HIDARI_HIKU(nextMove.color),
-      XY.MIGI_HIKU(nextMove.color),
-    ];
-    const aroundPieceDirection = this.aroundPieceDirection(movableDirection, record, nextMove);
-
-    // 他にも動かせる駒があるとき
-    if (aroundPieceDirection.length > 0) {
-      //　打つ場合
-      if (!(nextMove.from instanceof Square)) {
-        voices.push(SoundType.UTU);
-        return voices;
-      }
-
-      // 自身の行動方法
-      const selfMove: XY = new XY(
-        (nextMove.from.file - nextMove.to.file) * -1,
-        nextMove.from.rank - nextMove.to.rank,
-      );
-
-      const selfOperation = this.pieceOperationCanddate(nextMove, selfMove);
-      const otherOperationCount = this.operationCount(nextMove, aroundPieceDirection);
-
-      const operationFinalList: PieceOperation[] = [];
-      for (const ops of selfOperation) {
-        if (otherOperationCount.get(ops) === undefined) {
-          operationFinalList.push(ops);
-        }
-      }
-
-      const operationExplain = this.choiceOperation(operationFinalList);
-      voices.push(...this.pieceOperationToSoundType(operationExplain));
-    }
-    return voices;
-  }
-
-  shilverOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
-    const voices: SoundType[] = [];
-    const movableDirection: XY[] = [
-      XY.HIKU(nextMove.color),
-      XY.HIDARI_HIKU(nextMove.color),
-      XY.MIGI_HIKU(nextMove.color),
-      XY.HIDARI_AGARU(nextMove.color),
-      XY.MIGI_AGARU(nextMove.color),
-    ];
-    const aroundPieceDirection = this.aroundPieceDirection(movableDirection, record, nextMove);
-    // 他にも動かせる駒があるとき
-    if (aroundPieceDirection.length > 0) {
-      //　打つ場合
-      if (!(nextMove.from instanceof Square)) {
-        voices.push(SoundType.UTU);
-        return voices;
-      }
-
-      // 自身の行動方法
-      const selfMove: XY = new XY(
-        (nextMove.from.file - nextMove.to.file) * -1,
-        nextMove.from.rank - nextMove.to.rank,
-      );
-
-      const selfOperation = this.pieceOperationCanddate(nextMove, selfMove);
-      const otherOperationCount = this.operationCount(nextMove, aroundPieceDirection);
-
-      const operationFinalList: PieceOperation[] = [];
-      for (const ops of selfOperation) {
-        if (otherOperationCount.get(ops) === undefined) {
-          operationFinalList.push(ops);
-        }
-      }
-
-      const operationExplain = this.choiceOperation(operationFinalList);
-      voices.push(...this.pieceOperationToSoundType(operationExplain));
-    }
-    return voices;
-  }
-
-  knightOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
-    const voices: SoundType[] = [];
-    const movableDirection: XY[] = [new XY(-1, 2), new XY(1, 2)];
-    const aroundPieceDirection = this.aroundPieceDirection(movableDirection, record, nextMove);
-    // 他にも動かせる駒があるとき
-    if (aroundPieceDirection.length > 0) {
-      //　打つ場合
-      if (nextMove.from === nextMove.pieceType) {
-        voices.push(SoundType.UTU);
-        return voices;
-      }
-    }
-    return voices;
-  }
-
-  lanceOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
-    const voices: SoundType[] = [];
-    const searchDirection: XY[] = [XY.HIKU(nextMove.color)]; // 下方向のみ
-    const samePieces = this.longRangeSamePieceSearch(searchDirection, record, nextMove);
-
-    if (samePieces.length > 0) {
-      if (nextMove.from === nextMove.pieceType) {
-        voices.push(SoundType.UTU);
-        return voices;
-      }
-    }
-
-    return voices;
-  }
-
-  rookOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
-    const voices: SoundType[] = [];
-    const searchDirection: XY[] = [new XY(0, 1), new XY(0, -1), new XY(1, 0), new XY(-1, 0)];
-    const samePieces = this.longRangeSamePieceSearch(searchDirection, record, nextMove);
-
-    if (samePieces.length > 0) {
-      if (nextMove.from === nextMove.pieceType) {
-        voices.push(SoundType.UTU);
-        return voices;
-      }
-    }
-    return voices;
-  }
-
-  bishopOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
-    const voices: SoundType[] = [];
-    const searchDirection: XY[] = [new XY(1, 1), new XY(-1, -1), new XY(1, -1), new XY(-1, 1)];
-    const samePieces = this.longRangeSamePieceSearch(searchDirection, record, nextMove);
-
-    if (samePieces.length > 0) {
-      if (nextMove.from === nextMove.pieceType) {
-        voices.push(SoundType.UTU);
-        return voices;
-      }
-    }
-    return voices;
-  }
-
-  dragonOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
-    const voices: SoundType[] = [];
-    const searchDirection: XY[] = [new XY(0, 1), new XY(0, -1), new XY(1, 0), new XY(-1, 0)];
-    const aroundSearchDirection: XY[] = [
-      new XY(1, 1),
-      new XY(-1, -1),
-      new XY(1, -1),
-      new XY(-1, 1),
-    ];
-    const samePieces = this.longRangeSamePieceSearch(searchDirection, record, nextMove);
-    samePieces.push(...this.aroundPieceDirection(aroundSearchDirection, record, nextMove));
-
-    return voices;
-  }
-
-  horseOtherMoves(record: ImmutableRecord, nextMove: Move): SoundType[] {
-    const voices: SoundType[] = [];
-    const searchDirection: XY[] = [new XY(1, 1), new XY(-1, -1), new XY(1, -1), new XY(-1, 1)];
-    const aroundSearchDirection: XY[] = [new XY(0, 1), new XY(0, -1), new XY(1, 0), new XY(-1, 0)];
-    const samePieces = this.longRangeSamePieceSearch(searchDirection, record, nextMove);
-    samePieces.push(...this.aroundPieceDirection(aroundSearchDirection, record, nextMove));
-
-    return voices;
-  }
-
   operationVoice(record: ImmutableRecord): SoundType[] {
     const voices: SoundType[] = [];
     const nextMove = record.current.next?.move as Move | null;
     if (!nextMove) {
       return voices;
-    }
-    switch (nextMove.pieceType) {
-      case PieceType.GOLD:
-      case PieceType.PROM_PAWN:
-      case PieceType.PROM_KNIGHT:
-      case PieceType.PROM_LANCE:
-      case PieceType.PROM_SILVER:
-        voices.push(...this.goldOtherMoves(record, nextMove));
-        break;
-      case PieceType.SILVER:
-        voices.push(...this.shilverOtherMoves(record, nextMove));
-        break;
-      case PieceType.KNIGHT:
-        voices.push(...this.knightOtherMoves(record, nextMove));
-        break;
-      case PieceType.LANCE:
-        voices.push(...this.lanceOtherMoves(record, nextMove));
-        break;
-      case PieceType.ROOK:
-        voices.push(...this.rookOtherMoves(record, nextMove));
-        break;
-      case PieceType.BISHOP:
-        voices.push(...this.bishopOtherMoves(record, nextMove));
-        break;
-      case PieceType.DRAGON:
-        voices.push(...this.dragonOtherMoves(record, nextMove));
-        break;
-      case PieceType.HORSE:
-        voices.push(...this.horseOtherMoves(record, nextMove));
-        break;
     }
     return voices;
   }

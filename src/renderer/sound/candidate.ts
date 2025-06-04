@@ -1,0 +1,202 @@
+import {
+  ImmutableRecord,
+  ImmutableBoard,
+  Move,
+  PieceType,
+  Square,
+  Color,
+  SpecialMove,
+  movableDirections,
+  reverseDirection,
+  Piece,
+} from "tsshogi";
+
+import { SoundType } from "@/renderer/assets/sound";
+
+enum pieceOperations {
+  // 複数選択できる場合は、tier1を優先して選ぶ
+  AGARU = "上", // 上方向への移動 tier 1
+  YORU = "寄", // 左右方向への移動　tier 1
+  HIKU = "引", // 下方向への移動 tier 1
+  HIDARI = "左", // 左方向への移動
+  MIGI = "右", // 右方向への移動
+  SUGU = "直", // 真上方向への移動
+  HIDARI_AGARU = "左上", // 左上方向
+  HIDARI_HIKU = "左引", // 左下方向
+  MIGI_AGARU = "右上", // 右上方向
+  MIGI_HIKU = "右引", // 右下方向
+  UTU = "打", // 手駒から打つ場合
+}
+
+export class PieceOperationSound {
+  private _record: ImmutableRecord;
+  private _nextMove: Move;
+  private _skip: boolean;
+  private _nextTo: Square;
+  private _nextFrom: Square;
+  private _fromHand: boolean;
+  private _pieceType: PieceType;
+  private _color: Color;
+
+  constructor(record: ImmutableRecord) {
+    const initSquare = new Square(0, 0);
+    const initPieceType = PieceType.PAWN;
+    const initMove = new Move(initSquare, initSquare, false, Color.BLACK, initPieceType, null);
+
+    this._record = record;
+    this._nextMove = initMove;
+    this._skip = true;
+    if (this._record.current.next != null && this._record.current.next.move instanceof Move) {
+      this._nextMove = this._record.current.next.move;
+      this._skip = false;
+    }
+    this._nextTo = this._nextMove.to;
+    this._pieceType = this._nextMove.pieceType;
+    this._color = this._nextMove.color;
+    this._nextFrom = initMove.to;
+    this._fromHand = true;
+    if (this._nextMove.from instanceof Square) {
+      this._nextFrom = this._nextMove.from;
+      this._fromHand = false;
+    }
+  }
+
+  // getCandidate(): Square[] {
+  //   if (this._skip) {
+  //     return [];
+  //   }
+  //   const candidates: Square[] = [];
+
+  //   const samePieceSquares = this._record.position.listAttackersByPiece(
+  //     this._nextTo,
+  //     new Piece(this._nextMove.color, this._pieceType),
+  //   );
+
+  //   for (const s of samePieceSquares) {
+  //     if (!this._fromHand && s.file === this._nextFrom.file && s.rank === this._nextFrom.rank) {
+  //       continue;
+  //     }
+  //     candidates.push(s);
+  //   }
+  //   return candidates;
+  // }
+
+  hasAgaru(to: Square, from: Square, color: Color): boolean {
+    if (color === Color.BLACK) {
+      if (to.rank < from.rank) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  hasYoru(to: Square, from: Square): boolean {
+    if (to.rank === from.rank && (to.file === from.file + 1 || to.file + 1 === from.file)) {
+      // 寄る
+      return true;
+    }
+    return false;
+  }
+
+  getOperationList(to: Square, from: Square, color: Color): Map<pieceOperations, boolean> {
+    const opsList: Map<pieceOperations, boolean> = new Map();
+    // 上がる
+    if (this.hasAgaru(to, from, color)) {
+      opsList.set(pieceOperations.AGARU, true);
+    }
+    //　寄る
+    if (this.hasYoru(to, from)) {
+      opsList.set(pieceOperations.YORU, true);
+    }
+    return opsList;
+  }
+
+  choosePieceOperation(operations: pieceOperations[]): pieceOperations {
+    // 複数選択できる場合は、tier1を優先して返す
+    // AGARU = "上", // 上方向への移動 tier 1
+    // YORU = "寄", // 左右方向への移動　tier 1
+    // HIKU = "引", // 下方向への移動 tier 1
+    if (operations.length === 1) {
+      return operations[0];
+    }
+    if (operations.includes(pieceOperations.AGARU)) {
+      return pieceOperations.AGARU;
+    } else if (operations.includes(pieceOperations.YORU)) {
+      return pieceOperations.YORU;
+    } else if (operations.includes(pieceOperations.HIKU)) {
+      return pieceOperations.HIKU;
+    }
+    return operations[0];
+  }
+
+  // piceOperationによって音を変える。
+  pieceOperationToSoundType(operation: pieceOperations): SoundType[] {
+    const voices: SoundType[] = [];
+    switch (operation) {
+      case pieceOperations.AGARU:
+        voices.push(SoundType.AGARU);
+        break;
+      case pieceOperations.YORU:
+        voices.push(SoundType.YORU);
+        break;
+      case pieceOperations.HIKU:
+        voices.push(SoundType.HIKU);
+        break;
+      case pieceOperations.HIDARI:
+        voices.push(SoundType.HIDARI);
+        break;
+      case pieceOperations.MIGI:
+        voices.push(SoundType.MIGI);
+        break;
+      case pieceOperations.SUGU:
+        voices.push(SoundType.SUGU);
+        break;
+      case pieceOperations.HIDARI_AGARU:
+        voices.push(SoundType.HIDARI);
+        voices.push(SoundType.AGARU);
+        break;
+      case pieceOperations.HIDARI_HIKU:
+        voices.push(SoundType.HIDARI);
+        voices.push(SoundType.HIKU);
+        break;
+      case pieceOperations.MIGI_AGARU:
+        voices.push(SoundType.MIGI);
+        voices.push(SoundType.AGARU);
+        break;
+      case pieceOperations.MIGI_HIKU:
+        voices.push(SoundType.MIGI);
+        voices.push(SoundType.HIKU);
+        break;
+      case pieceOperations.UTU:
+        voices.push(SoundType.UTU);
+        break;
+    }
+    return voices;
+  }
+
+  getPieceOperation(): SoundType[] {
+    const selfOperationList = this.getOperationList(this._nextTo, this._nextFrom, this._color);
+    const candidates = this._record.position
+      .listAttackersByPiece(this._nextTo, new Piece(this._nextMove.color, this._pieceType))
+      .filter((s) => !s.equals(this._nextFrom));
+
+    const candidatesOperation: Map<pieceOperations, boolean> = new Map();
+
+    for (const c of candidates) {
+      const ops = this.getOperationList(this._nextTo, c, this._color);
+      ops.forEach((v, k) => {
+        candidatesOperation.set(k, v);
+      });
+    }
+
+    const finalOperationList: pieceOperations[] = [];
+    for (const selfOps of selfOperationList.keys()) {
+      if (!candidatesOperation.has(selfOps)) {
+        finalOperationList.push(selfOps);
+      }
+    }
+
+    const operation = this.choosePieceOperation(finalOperationList);
+    return this.pieceOperationToSoundType(operation);
+  }
+}
