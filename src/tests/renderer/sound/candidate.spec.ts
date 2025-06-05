@@ -1,5 +1,5 @@
-import { Record, importKIF, Move, SpecialMoveType, Square, specialMove } from "tsshogi";
-import { Candidate, PieceOperationSound } from "@/renderer/sound/candidate";
+import { Record, importKIF, Move, SpecialMoveType, Square, specialMove, Color } from "tsshogi";
+import { Candidate, PieceOperationSound } from "@/renderer/sound/operation";
 import { string } from "yaml/dist/schema/common/string";
 import { SoundType } from "@/renderer/assets/sound";
 
@@ -116,11 +116,68 @@ const multi_piece_white_data = `
 手数----指手---------消費時間--
     `;
 
-const dragon_move_black_data = `
+const dragon_move_pattern_1_data = `
+後手の持駒：金二 
+  ９ ８ ７ ６ ５ ４ ３ ２ １
++---------------------------+
+| 龍 ・ ・ ・ ・ ・ ・ ・ ・|一
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|二
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|三
+| ・ 龍 ・ ・ ・ ・ ・ ・ ・|四
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|五
+| ・ ・ ・ ・ ・ ・ ・v龍 ・|六
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|七
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|八
+| ・ ・ ・ ・ ・ ・ ・ ・v龍|九
++---------------------------+
+先手の持駒：金二
+先手番
+手数----指手---------消費時間--
+    `;
+
+const dragon_move_pattern_2_data = `
 後手の持駒：金二 
   ９ ８ ７ ６ ５ ４ ３ ２ １
 +---------------------------+
 | ・ ・ ・ ・ ・ ・ ・ ・ ・|一
+| ・ ・ ・ ・ 龍 ・ ・ ・ ・|二
+| ・ ・ ・ ・ ・ ・ ・ 龍 ・|三
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|四
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|五
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|六
+| ・v龍 ・ ・ ・ ・ ・ ・ ・|七
+| ・ ・ ・ ・v龍 ・ ・ ・ ・|八
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|九
++---------------------------+
+先手の持駒：金二
+先手番
+手数----指手---------消費時間--
+    `;
+
+const dragon_move_pattern_3_data = `
+後手の持駒：金二 
+  ９ ８ ７ ６ ５ ４ ３ ２ １
++---------------------------+
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|一
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|二
+|v龍 ・ ・ ・v龍 ・ ・ ・ ・|三
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|四
+| ・ ・ ・ ・ 龍 ・ ・ ・ 龍|五
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|六
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|七
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|八
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|九
++---------------------------+
+先手の持駒：金二
+先手番
+手数----指手---------消費時間--
+    `;
+
+const dragon_move_pattern_4_data = `
+後手の持駒：金二 
+  ９ ８ ７ ６ ５ ４ ３ ２ １
++---------------------------+
+| ・ ・ ・ ・ ・ ・ ・v龍v龍|一
 | ・ ・ ・ ・ ・ ・ ・ ・ ・|二
 | ・ ・ ・ ・ ・ ・ ・ ・ ・|三
 | ・ ・ ・ ・ ・ ・ ・ ・ ・|四
@@ -128,7 +185,26 @@ const dragon_move_black_data = `
 | ・ ・ ・ ・ ・ ・ ・ ・ ・|六
 | ・ ・ ・ ・ ・ ・ ・ ・ ・|七
 | ・ ・ ・ ・ ・ ・ ・ ・ ・|八
-| ・ ・ ・ ・ ・ ・ ・ ・ ・|九
+| 龍 龍 ・ ・ ・ ・ ・ ・ ・|九
++---------------------------+
+先手の持駒：金二
+先手番
+手数----指手---------消費時間--
+    `;
+
+const dragon_move_pattern_5_data = `
+後手の持駒：金二 
+  ９ ８ ７ ６ ５ ４ ３ ２ １
++---------------------------+
+|v龍 ・ ・ ・ ・ ・ ・ ・ ・|一
+| ・v龍 ・ ・ ・ ・ ・ ・ ・|二
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|三
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|四
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|五
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|六
+| ・ ・ ・ ・ ・ ・ ・ ・ ・|七
+| ・ ・ ・ ・ ・ ・ ・ 龍 ・|八
+| ・ ・ ・ ・ ・ ・ ・ ・ 龍|九
 +---------------------------+
 先手の持駒：金二
 先手番
@@ -305,15 +381,19 @@ describe("Piece Sound", () => {
     ];
 
     for (const c of testCases) {
-      console.log("test case");
-      console.log(c);
       const data = c.initBoard + c.records;
       const record = importKIF(data) as Record;
       record.goto(0);
       expect(record.current.next).not.toBeNull();
       const pos = new PieceOperationSound(record);
       const result = pos.getPieceOperation();
-      expect(result).toEqual(c.answer);
+      try {
+        expect(result).toEqual(c.answer);
+      } catch (e) {
+        console.log("test case");
+        console.log(c);
+        throw e;
+      }
     }
   });
 
@@ -482,15 +562,163 @@ describe("Piece Sound", () => {
     ];
 
     for (const c of testCases) {
-      console.log("test case");
-      console.log(c);
       const data = c.initBoard + c.records;
       const record = importKIF(data) as Record;
       record.goto(0);
       expect(record.current.next).not.toBeNull();
       const pos = new PieceOperationSound(record);
       const result = pos.getPieceOperation();
-      expect(result).toEqual(c.answer);
+      try {
+        expect(result).toEqual(c.answer);
+      } catch (e) {
+        console.log("test case");
+        console.log(c);
+        throw e;
+      }
+    }
+  });
+
+  it("dragon move test", () => {
+    const testCases: { initBoard: string; records: string; color: Color; answer: SoundType[] }[] = [
+      {
+        initBoard: dragon_move_pattern_1_data,
+        records: "1 ８二龍(91)\n",
+        color: Color.BLACK,
+        answer: [SoundType.HIKU],
+      },
+      {
+        initBoard: dragon_move_pattern_1_data,
+        records: "1 ８二龍(84)\n",
+        color: Color.BLACK,
+        answer: [SoundType.AGARU],
+      },
+      {
+        initBoard: dragon_move_pattern_1_data,
+        records: "1 ２八龍(19)\n",
+        color: Color.WHITE,
+        answer: [SoundType.HIKU],
+      },
+      {
+        initBoard: dragon_move_pattern_1_data,
+        records: "1 ２八龍(26)\n",
+        color: Color.WHITE,
+        answer: [SoundType.AGARU],
+      },
+      {
+        initBoard: dragon_move_pattern_2_data,
+        records: "1 ４三龍(23)\n",
+        color: Color.BLACK,
+        answer: [SoundType.YORU],
+      },
+      {
+        initBoard: dragon_move_pattern_2_data,
+        records: "1 ４三龍(52)\n",
+        color: Color.BLACK,
+        answer: [SoundType.HIKU],
+      },
+      {
+        initBoard: dragon_move_pattern_2_data,
+        records: "1 ６七龍(87)\n",
+        color: Color.WHITE,
+        answer: [SoundType.YORU],
+      },
+      {
+        initBoard: dragon_move_pattern_2_data,
+        records: "1 ６七龍(58)\n",
+        color: Color.WHITE,
+        answer: [SoundType.HIKU],
+      },
+      {
+        initBoard: dragon_move_pattern_3_data,
+        records: "1 ３五龍(55)\n",
+        color: Color.BLACK,
+        answer: [SoundType.HIDARI],
+      },
+      {
+        initBoard: dragon_move_pattern_3_data,
+        records: "1 ３五龍(15)\n",
+        color: Color.BLACK,
+        answer: [SoundType.MIGI],
+      },
+      {
+        initBoard: dragon_move_pattern_3_data,
+        records: "1 ７三龍(53)\n",
+        color: Color.WHITE,
+        answer: [SoundType.HIDARI],
+      },
+      {
+        initBoard: dragon_move_pattern_3_data,
+        records: "1 ７三龍(93)\n",
+        color: Color.WHITE,
+        answer: [SoundType.MIGI],
+      },
+      {
+        initBoard: dragon_move_pattern_4_data,
+        records: "1 ８八龍(99)\n",
+        color: Color.BLACK,
+        answer: [SoundType.HIDARI],
+      },
+      {
+        initBoard: dragon_move_pattern_4_data,
+        records: "1 ８八龍(89)\n",
+        color: Color.BLACK,
+        answer: [SoundType.MIGI],
+      },
+      {
+        initBoard: dragon_move_pattern_4_data,
+        records: "1 ２二龍(11)\n",
+        color: Color.WHITE,
+        answer: [SoundType.HIDARI],
+      },
+      {
+        initBoard: dragon_move_pattern_4_data,
+        records: "1 ２二龍(21)\n",
+        color: Color.WHITE,
+        answer: [SoundType.MIGI],
+      },
+      {
+        initBoard: dragon_move_pattern_5_data,
+        records: "1 １七龍(28)\n",
+        color: Color.BLACK,
+        answer: [SoundType.HIDARI],
+      },
+      {
+        initBoard: dragon_move_pattern_5_data,
+        records: "1 １七龍(19)\n",
+        color: Color.BLACK,
+        answer: [SoundType.MIGI],
+      },
+      {
+        initBoard: dragon_move_pattern_5_data,
+        records: "1 ９三龍(82)\n",
+        color: Color.WHITE,
+        answer: [SoundType.HIDARI],
+      },
+      {
+        initBoard: dragon_move_pattern_5_data,
+        records: "1 ９三龍(91)\n",
+        color: Color.WHITE,
+        answer: [SoundType.MIGI],
+      },
+    ];
+
+    for (const c of testCases) {
+      const data =
+        (c.color === Color.BLACK ? c.initBoard : c.initBoard.replace("先手番", "後手番")) +
+        c.records;
+      const record = importKIF(data) as Record;
+      record.goto(0);
+      expect(record.current.next).not.toBeNull();
+      const pos = new PieceOperationSound(record);
+      const result = pos.getPieceOperation();
+      try {
+        expect(result).toEqual(c.answer);
+      } catch (e) {
+        console.log("test case");
+        console.log(data);
+        console.log(c.answer);
+        throw e;
+      }
     }
   });
 });

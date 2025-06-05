@@ -61,26 +61,6 @@ export class PieceOperationSound {
     }
   }
 
-  // getCandidate(): Square[] {
-  //   if (this._skip) {
-  //     return [];
-  //   }
-  //   const candidates: Square[] = [];
-
-  //   const samePieceSquares = this._record.position.listAttackersByPiece(
-  //     this._nextTo,
-  //     new Piece(this._nextMove.color, this._pieceType),
-  //   );
-
-  //   for (const s of samePieceSquares) {
-  //     if (!this._fromHand && s.file === this._nextFrom.file && s.rank === this._nextFrom.rank) {
-  //       continue;
-  //     }
-  //     candidates.push(s);
-  //   }
-  //   return candidates;
-  // }
-
   hasAgaru(to: Square, from: Square, color: Color): boolean {
     if (color === Color.BLACK) {
       if (to.rank < from.rank) {
@@ -95,7 +75,7 @@ export class PieceOperationSound {
   }
 
   hasYoru(to: Square, from: Square): boolean {
-    if (to.rank === from.rank && (to.file === from.file + 1 || to.file + 1 === from.file)) {
+    if (to.rank === from.rank && (to.file > from.file || to.file < from.file)) {
       // 寄る
       return true;
     }
@@ -206,6 +186,23 @@ export class PieceOperationSound {
     return false;
   }
 
+  dragonHorseLeftRight(self: Square, other: Square, color: Color): pieceOperations[] {
+    if (color === Color.BLACK) {
+      if (self.file > other.file) {
+        return [pieceOperations.HIDARI];
+      } else if (self.file < other.file) {
+        return [pieceOperations.MIGI];
+      }
+    } else {
+      if (self.file < other.file) {
+        return [pieceOperations.HIDARI];
+      } else if (self.file > other.file) {
+        return [pieceOperations.MIGI];
+      }
+    }
+    return [];
+  }
+
   getOperationList(to: Square, from: Square, color: Color): Map<pieceOperations, boolean> {
     const opsList: Map<pieceOperations, boolean> = new Map();
     // 上がる
@@ -314,11 +311,17 @@ export class PieceOperationSound {
     return voices;
   }
 
+  // 駒の音の一覧を返す
   getPieceOperation(): SoundType[] {
     const selfOperationList = this.getOperationList(this._nextTo, this._nextFrom, this._color);
     const candidates = this._record.position
       .listAttackersByPiece(this._nextTo, new Piece(this._nextMove.color, this._pieceType))
       .filter((s) => !s.equals(this._nextFrom));
+
+    // 他に候補がなければ何もしない
+    if (candidates.length < 1) {
+      return [];
+    }
 
     const candidatesOperation: Map<pieceOperations, boolean> = new Map();
 
@@ -327,6 +330,18 @@ export class PieceOperationSound {
       ops.forEach((v, k) => {
         candidatesOperation.set(k, v);
       });
+    }
+
+    // 1. 龍/馬では左右を利用するため、そのチェックを追加
+    // 2. 龍/馬では直ぐを使わないので削除
+    if (this._pieceType === PieceType.DRAGON || this._pieceType === PieceType.HORSE) {
+      for (const c of candidates) {
+        const ss = this.dragonHorseLeftRight(this._nextTo, c, this._color);
+        for (const s of ss) {
+          selfOperationList.set(s, true);
+        }
+      }
+      selfOperationList.delete(pieceOperations.SUGU);
     }
 
     const finalOperationList: pieceOperations[] = [];
