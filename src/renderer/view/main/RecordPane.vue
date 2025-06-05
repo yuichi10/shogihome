@@ -55,7 +55,7 @@ import {
 } from "@/renderer/devices/hotkey";
 import { useAppSettings } from "@/renderer/store/settings";
 import BookPanel from "./BookPanel.vue";
-import { SoundManager } from "@/renderer/sound/sound";
+import { SoundManager } from "@/renderer/sound/play";
 
 defineProps({
   showElapsedTime: {
