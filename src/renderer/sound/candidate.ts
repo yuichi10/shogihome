@@ -86,6 +86,10 @@ export class PieceOperationSound {
       if (to.rank < from.rank) {
         return true;
       }
+    } else {
+      if (to.rank > from.rank) {
+        return true;
+      }
     }
     return false;
   }
@@ -94,6 +98,110 @@ export class PieceOperationSound {
     if (to.rank === from.rank && (to.file === from.file + 1 || to.file + 1 === from.file)) {
       // 寄る
       return true;
+    }
+    return false;
+  }
+
+  hasHiku(to: Square, from: Square, color: Color): boolean {
+    if (color === Color.BLACK) {
+      if (to.rank > from.rank) {
+        return true;
+      }
+    } else {
+      if (to.rank < from.rank) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  hasHidari(to: Square, from: Square, color: Color): boolean {
+    if (color === Color.BLACK) {
+      if (to.file < from.file) {
+        return true;
+      }
+    } else {
+      if (to.file > from.file) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  hasMigi(to: Square, from: Square, color: Color): boolean {
+    if (color === Color.BLACK) {
+      if (to.file > from.file) {
+        return true;
+      }
+    } else {
+      if (to.file < from.file) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  hasSugu(to: Square, from: Square, color: Color): boolean {
+    if (color === Color.BLACK) {
+      if (to.rank + 1 === from.rank && to.file === from.file) {
+        return true;
+      }
+    } else {
+      if (to.rank - 1 === from.rank && to.file === from.file) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  hasHidariAgaru(to: Square, from: Square, color: Color): boolean {
+    if (color === Color.BLACK) {
+      if (to.file === from.file - 1 && to.rank === from.rank - 1) {
+        return true;
+      }
+    } else {
+      if (to.file === from.file + 1 && to.rank === from.rank + 1) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  hasMigiAgaru(to: Square, from: Square, color: Color): boolean {
+    if (color === Color.BLACK) {
+      if (to.file === from.file + 1 && to.rank === from.rank - 1) {
+        return true;
+      }
+    } else {
+      if (to.file === from.file - 1 && to.rank === from.rank + 1) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  hasHidariHiku(to: Square, from: Square, color: Color): boolean {
+    if (color === Color.BLACK) {
+      if (to.file === from.file - 1 && to.rank === from.rank + 1) {
+        return true;
+      }
+    } else {
+      if (to.file === from.file + 1 && to.rank === from.rank - 1) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  hasMigiHiku(to: Square, from: Square, color: Color): boolean {
+    if (color === Color.BLACK) {
+      if (to.file === from.file + 1 && to.rank === from.rank + 1) {
+        return true;
+      }
+    } else {
+      if (to.file === from.file - 1 && to.rank === from.rank - 1) {
+        return true;
+      }
     }
     return false;
   }
@@ -107,6 +215,38 @@ export class PieceOperationSound {
     //　寄る
     if (this.hasYoru(to, from)) {
       opsList.set(pieceOperations.YORU, true);
+    }
+    // 引く
+    if (this.hasHiku(to, from, color)) {
+      opsList.set(pieceOperations.HIKU, true);
+    }
+    // 左
+    if (this.hasHidari(to, from, color)) {
+      opsList.set(pieceOperations.HIDARI, true);
+    }
+    // 右
+    if (this.hasMigi(to, from, color)) {
+      opsList.set(pieceOperations.MIGI, true);
+    }
+    // 直ぐ
+    if (this.hasSugu(to, from, color)) {
+      opsList.set(pieceOperations.SUGU, true);
+    }
+    // 左上がる
+    if (this.hasHidariAgaru(to, from, color)) {
+      opsList.set(pieceOperations.HIDARI_AGARU, true);
+    }
+    // 左引く
+    if (this.hasHidariHiku(to, from, color)) {
+      opsList.set(pieceOperations.HIDARI_HIKU, true);
+    }
+    // 右上がる
+    if (this.hasMigiAgaru(to, from, color)) {
+      opsList.set(pieceOperations.MIGI_AGARU, true);
+    }
+    // 右引く
+    if (this.hasMigiHiku(to, from, color)) {
+      opsList.set(pieceOperations.MIGI_HIKU, true);
     }
     return opsList;
   }
