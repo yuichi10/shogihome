@@ -1,6 +1,6 @@
 import { soundSourceMap, SoundType } from "@/renderer/assets/sound";
-import { ImmutableRecord, SpecialMoveType, Color, Move, PieceType, Square } from "tsshogi";
-import { KihuyomiSounds, PieceOperationSound } from "@/renderer/sound/sound";
+import { ImmutableRecord } from "tsshogi";
+import { KihuyomiSounds } from "@/renderer/sound/sound";
 
 export class SoundManager {
   private synth: SpeechSynthesis;
