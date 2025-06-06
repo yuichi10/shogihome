@@ -354,23 +354,23 @@ export class KihuyomiSounds {
     return this.pieceOperationToSoundType(operation);
   }
 
-  turnVoice(nextMove: Move): SoundType[] {
+  turnVoice(): SoundType[] {
     const voices: SoundType[] = [];
-    if (nextMove.color === Color.BLACK) {
+    if (this._color === Color.BLACK) {
       voices.push(SoundType.BLACK);
-    } else if (nextMove.color === Color.WHITE) {
+    } else if (this._color === Color.WHITE) {
       voices.push(SoundType.WHITE);
     }
     return voices;
   }
 
-  getPlaceVoice(currentMove: Move, nextMove: Move): SoundType[] {
+  getPlaceVoice(currentMove: Move): SoundType[] {
     const voices: SoundType[] = [];
-    if (nextMove.capturedPieceType != null && nextMove.to.equals(currentMove.to)) {
+    if (this._nextMove.capturedPieceType != null && this._nextMove.to.equals(currentMove.to)) {
       voices.push(SoundType.ONAJIKU);
       return voices;
     }
-    const nextPlace = `${nextMove.to.file}${nextMove.to.rank}`;
+    const nextPlace = `${this._nextMove.to.file}${this._nextMove.to.rank}`;
     if (Object.values(SoundType).includes(nextPlace as SoundType)) {
       voices.push(nextPlace as SoundType);
     }
@@ -378,9 +378,9 @@ export class KihuyomiSounds {
     return voices;
   }
 
-  getPieceVoice(nextMove: Move): SoundType[] {
+  getPieceVoice(): SoundType[] {
     const voices: SoundType[] = [];
-    switch (nextMove.pieceType) {
+    switch (this._pieceType) {
       case PieceType.KING:
         voices.push(SoundType.GYOKU);
         break;
@@ -427,16 +427,22 @@ export class KihuyomiSounds {
     return voices;
   }
 
-  promoteVoice(nextMove: Move): SoundType[] {
+  promoteVoice(): SoundType[] {
     const voices: SoundType[] = [];
-    if (nextMove.promote) {
+    if (this._nextMove.promote) {
       voices.push(SoundType.NARU);
     }
     // ならないかつfromが持ち駒からではない
     if (!this._nextMove.promote && !this._fromHand && this._piece.isPromotable()) {
-      if (nextMove.color === Color.BLACK && nextMove.to.rank <= 3) {
+      if (
+        this._color === Color.BLACK &&
+        (this._nextMove.to.rank <= 3 || this._nextFrom.rank <= 3)
+      ) {
         voices.push(SoundType.NARAZU);
-      } else if (nextMove.color === Color.WHITE && nextMove.to.rank >= 7) {
+      } else if (
+        this._color === Color.WHITE &&
+        (this._nextMove.to.rank >= 7 || this._nextFrom.rank >= 7)
+      ) {
         voices.push(SoundType.NARAZU);
       }
     }
@@ -454,11 +460,10 @@ export class KihuyomiSounds {
     if (!nextMove) {
       return voices;
     }
-    voices.push(...this.turnVoice(nextMove));
-    voices.push(...this.getPlaceVoice(currentMove, nextMove));
-    voices.push(...this.getPieceVoice(nextMove));
-    voices.push();
-    voices.push(...this.promoteVoice(nextMove));
+    voices.push(...this.turnVoice());
+    voices.push(...this.getPlaceVoice(currentMove));
+    voices.push(...this.getPieceVoice());
+    voices.push(...this.promoteVoice());
     voices.push(...this.getPieceOperation());
 
     return voices;
