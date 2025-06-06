@@ -115,7 +115,7 @@ let playIntervalId: NodeJS.Timeout | null = null;
 const soundManager = new SoundManager();
 
 const onPlay = async () => {
-  const intervalTime = 5000;
+  const intervalTime = 8000;
   store.record.position.board;
   isPlaying.value = !isPlaying.value;
   if (isPlaying.value) {
